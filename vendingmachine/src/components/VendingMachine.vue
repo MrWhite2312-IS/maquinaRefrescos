@@ -208,6 +208,7 @@ export default {
         this.compra = this.bebidas.map(() => 0);
         this.monedasDisponibles.forEach((m) => (m.cantidad = 0));
         this.billetes1000 = 0;
+        this.montoTotal = 0;
       } catch (e) {
         if (e.response && e.response.data) {
           this.mensaje =
