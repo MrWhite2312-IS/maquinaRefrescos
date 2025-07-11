@@ -1,9 +1,10 @@
 ﻿namespace maquinaRefrescosBackend.Models
 {
-    public class Factura
+    public class CompraReq
     {
-        public double vuelto { get; set; }
+      
         public List<Bebida> bebidas { get; set; }
+        public List<Moneda> monedas { get; set; }
 
     }
 }
