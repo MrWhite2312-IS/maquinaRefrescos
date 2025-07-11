@@ -21,6 +21,11 @@ namespace maquinaRefrescosBackend.Aplicacion
             return Bebidas.Sum(b => (double)b.Precio * b.Cantidad);
         }
 
+        public List<Moneda> monedasParaVuelto()
+        {
+            return new List<Moneda> { Quinientos, cien, cincuenta, veinticinco };
+        }
+
         public List<Bebida> BebidasDisponibles()
         {
             return new List<Bebida> { CocaCola, Pepsi, Fanta, Sprite };
@@ -104,9 +109,26 @@ namespace maquinaRefrescosBackend.Aplicacion
         {
             double montoOrden = DevolverMonto(Bebidas);
             List<Moneda> monedasVuelto = CalcularVuelto(Monedas, montoOrden);
+
             foreach (var bebida in Bebidas)
             {
-                var bebidaDisponible = BebidasDisponibles().FirstOrDefault(b => b.Nombre == bebida.Nombre);
+                Bebida bebidaDisponible = null;
+                switch (bebida.Nombre)
+                {
+                    case "Coca Cola":
+                        bebidaDisponible = CocaCola;
+                        break;
+                    case "Pepsi":
+                        bebidaDisponible = Pepsi;
+                        break;
+                    case "Fanta":
+                        bebidaDisponible = Fanta;
+                        break;
+                    case "Sprite":
+                        bebidaDisponible = Sprite;
+                        break;
+                }
+
                 if (bebidaDisponible == null || bebidaDisponible.Cantidad < bebida.Cantidad)
                 {
                     throw new Exception($"No hay suficiente {bebida.Nombre} disponible.");

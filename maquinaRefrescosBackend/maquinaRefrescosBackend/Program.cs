@@ -20,7 +20,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 
 
-builder.Services.AddScoped<IVendingMachineService,VendinMachineService>();
+builder.Services.AddSingleton<IVendingMachineService,VendinMachineService>();
 
 var app = builder.Build();
 

@@ -24,7 +24,7 @@ namespace maquinaRefrescosBackend.Controllers
             return Ok(bebidas);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("DevolverMonto")]
         public ActionResult<double> DevolverMonto([FromBody] List<Bebida> bebidas)
         {

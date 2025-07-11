@@ -21,6 +21,7 @@ namespace maquinaRefrescosBackend.Aplicacion
         public List<Moneda> RestarMonedasDisponibles(double Vuelto);
         public List<Moneda> CalcularVuelto(List<Moneda> Monedas, double montoOrden);
         public List<Moneda> ComprarBebidas(List<Bebida> Bebidas, List<Moneda> Monedas);
+        public List<Moneda> monedasParaVuelto();
 
     }
 }
