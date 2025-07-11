@@ -1,56 +1,79 @@
 <template>
   <div class="vending-machine">
-    <h1>Máquina de Refrescos</h1>
-    <div class="drinks">
-      <h2>Refrescos disponibles</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Cantidad disponible</th>
-            <th>Cantidad a comprar</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(bebida, idx) in bebidas" :key="bebida.nombre">
-            <td>{{ bebida.nombre }}</td>
-            <td>{{ bebida.precio }} colones</td>
-            <td>{{ bebida.cantidad }}</td>
-            <td>
-              <input
-                type="number"
-                min="0"
-                :max="bebida.cantidad"
-                v-model.number="compra[idx]"
-                @input="actualizarMonto"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="fueraServicio" class="fuera-servicio">
+      <h2>La máquina está fuera de servicio</h2>
+      <p>No hay monedas disponibles para dar vuelto.</p>
     </div>
-    <div class="total">
-      <h3>Costo total: {{ montoTotal }} colones</h3>
-    </div>
-    <div class="payment">
-      <h2>Ingrese su pago</h2>
-      <div v-for="moneda in monedasDisponibles" :key="moneda.valor">
-        <label>
-          {{ moneda.label }}:
-          <input type="number" min="0" v-model.number="moneda.cantidad" />
-        </label>
+    <div v-else>
+      <h1>Máquina de Refrescos</h1>
+      <div class="drinks">
+        <h2>Refrescos disponibles</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Precio</th>
+              <th>Cantidad disponible</th>
+              <th>Cantidad a comprar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(bebida, idx) in bebidas" :key="bebida.nombre">
+              <td>{{ bebida.nombre }}</td>
+              <td>{{ bebida.precio }} colones</td>
+              <td>{{ bebida.cantidad }}</td>
+              <td>
+                <input
+                  type="number"
+                  min="0"
+                  :max="bebida.cantidad"
+                  v-model.number="compra[idx]"
+                  @input="actualizarMonto"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div>
-        <label>
-          Billetes de 1000:
-          <input type="number" min="0" v-model.number="billetes1000" />
-        </label>
+      <div class="total">
+        <h3>Costo total: {{ montoTotal }} colones</h3>
       </div>
-    </div>
-    <button @click="realizarCompra">Comprar</button>
-    <div v-if="mensaje" class="mensaje" :class="{ error: error }">
-      <pre>{{ mensaje }}</pre>
+      <div class="payment">
+        <h2>Ingrese su pago</h2>
+        <div v-for="moneda in monedasDisponibles" :key="moneda.valor">
+          <label>
+            {{ moneda.label }}:
+            <input type="number" min="0" v-model.number="moneda.cantidad" />
+          </label>
+        </div>
+        <div>
+          <label>
+            Billetes de 1000:
+            <input type="number" min="0" v-model.number="billetes1000" />
+          </label>
+        </div>
+        <div class="monedas-maquina">
+          <h3>Monedas disponibles en la máquina</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Valor</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="moneda in monedasMaquina" :key="moneda.valor">
+                <td>{{ moneda.valor }} colones</td>
+                <td>{{ moneda.cantidad }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <button @click="realizarCompra" :disabled="fueraServicio">Comprar</button>
+      <div v-if="mensaje" class="mensaje" :class="{ error: error }">
+        <pre>{{ mensaje }}</pre>
+      </div>
     </div>
   </div>
 </template>
@@ -73,10 +96,13 @@ export default {
       billetes1000: 0,
       mensaje: "",
       error: false,
+      monedasMaquina: [],
+      fueraServicio: false,
     };
   },
   mounted() {
     this.cargarBebidas();
+    this.cargarMonedasMaquina();
   },
   methods: {
     async cargarBebidas() {
@@ -89,6 +115,24 @@ export default {
       } catch (e) {
         this.mensaje = "Error al cargar bebidas.";
         this.error = true;
+      }
+    },
+    async cargarMonedasMaquina() {
+      try {
+        const res = await axios.get(
+          "https://localhost:7115/api/VendingMachine/Monedas"
+        );
+        this.monedasMaquina = res.data;
+        // Verifica si hay monedas disponibles
+        const totalMonedas = this.monedasMaquina.reduce(
+          (acc, m) => acc + m.cantidad,
+          0
+        );
+        this.fueraServicio = totalMonedas === 0;
+      } catch (e) {
+        // No mostrar error en UI, solo loguear
+        console.error("Error al cargar monedas de la máquina.", e);
+        this.fueraServicio = true;
       }
     },
     async actualizarMonto() {
@@ -105,7 +149,7 @@ export default {
       }
       try {
         const res = await axios.post(
-          "https://localhost:7115/api/vendingmachine/DevolverMonto",
+          "https://localhost:7115/api/vendingmachine/Monto",
           seleccion
         );
         this.montoTotal = res.data;
@@ -160,6 +204,10 @@ export default {
           this.mensaje = "No hay vuelto que entregar.";
         }
         await this.cargarBebidas();
+        await this.cargarMonedasMaquina();
+        this.compra = this.bebidas.map(() => 0);
+        this.monedasDisponibles.forEach((m) => (m.cantidad = 0));
+        this.billetes1000 = 0;
       } catch (e) {
         if (e.response && e.response.data) {
           this.mensaje =
@@ -171,6 +219,7 @@ export default {
         }
         this.error = true;
         await this.cargarBebidas();
+        await this.cargarMonedasMaquina();
       }
     },
   },
@@ -287,5 +336,52 @@ button:hover {
   background: #ffe0e0;
   color: #a00;
   border: 1px solid #e74c3c;
+}
+.monedas-maquina {
+  margin-top: 2em;
+  background: #f4f8fb;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.04);
+  padding: 1em;
+}
+.monedas-maquina h3 {
+  color: #34495e;
+  margin-bottom: 0.7em;
+  font-size: 1.1em;
+}
+.monedas-maquina table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.03);
+}
+.monedas-maquina th {
+  background: #16a085;
+  color: #fff;
+  font-weight: 500;
+  padding: 0.5em;
+  border: none;
+}
+.monedas-maquina td {
+  border-bottom: 1px solid #e1e4e8;
+  padding: 0.5em;
+  text-align: center;
+  background: #f9f9f9;
+}
+.monedas-maquina tr:last-child td {
+  border-bottom: none;
+}
+/* Fuera de servicio */
+.fuera-servicio {
+  background: #ffe0e0;
+  color: #a00;
+  border: 2px solid #e74c3c;
+  border-radius: 12px;
+  padding: 2em;
+  text-align: center;
+  margin-bottom: 2em;
+  font-size: 1.3em;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
 }
 </style>

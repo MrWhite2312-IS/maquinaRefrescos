@@ -24,8 +24,15 @@ namespace maquinaRefrescosBackend.Controllers
             return Ok(bebidas);
         }
 
+        [HttpGet("Monedas")]
+        public ActionResult<List<Moneda>> MonedasDisponibles()
+        {
+            var monedas = _vendingMachineService.monedasParaVuelto();
+            return Ok(monedas);
+        }
+
         [HttpPost]
-        [Route("DevolverMonto")]
+        [Route("Monto")]
         public ActionResult<double> DevolverMonto([FromBody] List<Bebida> bebidas)
         {
             if (bebidas == null || !bebidas.Any())
